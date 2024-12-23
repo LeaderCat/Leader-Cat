@@ -4,7 +4,7 @@ Leader Cat is a meme token on the Bsc network. His goal is to become the leader 
 
 ## Table of Contents
 
-- leadercat-contracts#LeaderCat Ca Code: The core contracts of the Leader Cat.
+- leadercat-contracts#LEADERCATCONTRACT.sol: The core contracts of the Leader Cat.
 
 ## Additional Resources
 - [Website]()
