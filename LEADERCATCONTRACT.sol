@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.0;
 
 contract LEADERCATCONTRACT {
     string public constant name = "TOKEN NAME";
@@ -9,7 +9,6 @@ contract LEADERCATCONTRACT {
     uint256 public constant MAX_FEE_PERCENTAGE = 50;
 
     mapping(address => uint256) public balanceOf;
-    mapping(address => mapping(address => uint256)) public allowance;
     mapping(address => bool) public isBlacklisted;
     mapping(address => bool) public isDEX;
 
@@ -20,25 +19,22 @@ contract LEADERCATCONTRACT {
     uint256 public buyFee;
     uint256 public sellFee;
 
-    mapping(bytes4 => uint256) public timelockExpiration;
-
-    bool private _reentrancyLock;
+    mapping(address => uint256) public unblacklistTimelock;
+    mapping(address => mapping(address => uint256)) public allowance;
 
     event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
     event BlacklistUpdated(address indexed account, bool isBlacklisted);
     event FeesUpdated(uint256 buyFee, uint256 sellFee);
     event OwnershipProposed(address indexed previousOwner, address indexed newOwner);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event FeeRecipientUpdated(address indexed previousRecipient, address indexed newRecipient);
 
-    constructor(uint256 _timelockDuration, address _feeRecipient) {
+    constructor(address _feeRecipient) {
         require(_feeRecipient != address(0), "Invalid fee recipient address");
         owner = msg.sender;
         feeRecipient = _feeRecipient;
         balanceOf[msg.sender] = totalSupply;
-
-        timelockExpiration[this.updateBlacklist.selector] = block.timestamp + _timelockDuration;
-        timelockExpiration[this.setFees.selector] = block.timestamp + _timelockDuration;
     }
 
     modifier onlyOwner() {
@@ -56,20 +52,12 @@ contract LEADERCATCONTRACT {
         _;
     }
 
-    modifier timelockPassed(bytes4 selector) {
+    modifier timelockPassedForUnblacklist(address account) {
         require(
-            block.timestamp >= timelockExpiration[selector],
-            "Timelock in effect"
+            block.timestamp >= unblacklistTimelock[account],
+            "Timelock for unblacklist not yet passed"
         );
         _;
-        timelockExpiration[selector] = block.timestamp + 1 days;
-    }
-
-    modifier noReentrancy() {
-        require(!_reentrancyLock, "Reentrancy detected");
-        _reentrancyLock = true;
-        _;
-        _reentrancyLock = false;
     }
 
     function transfer(address _to, uint256 _amount)
@@ -77,53 +65,89 @@ contract LEADERCATCONTRACT {
         notBlacklisted(msg.sender)
         notBlacklisted(_to)
         validAddress(_to)
-        noReentrancy
         returns (bool success)
     {
+        _transfer(msg.sender, _to, _amount);
+        return true;
+    }
+
+    function approve(address _spender, uint256 _amount)
+        external
+        notBlacklisted(msg.sender)
+        validAddress(_spender)
+        returns (bool success)
+    {
+        allowance[msg.sender][_spender] = _amount;
+        emit Approval(msg.sender, _spender, _amount);
+        return true;
+    }
+
+    function transferFrom(
+        address _from,
+        address _to,
+        uint256 _amount
+    )
+        external
+        notBlacklisted(_from)
+        notBlacklisted(_to)
+        validAddress(_to)
+        returns (bool success)
+    {
+        require(allowance[_from][msg.sender] >= _amount, "Allowance exceeded");
+        allowance[_from][msg.sender] -= _amount;
+        _transfer(_from, _to, _amount);
+        return true;
+    }
+
+    function _transfer(address _from, address _to, uint256 _amount) internal {
         require(_amount > 0, "Transfer amount must be greater than 0");
-        require(balanceOf[msg.sender] >= _amount, "Insufficient balance");
+        require(balanceOf[_from] >= _amount, "Insufficient balance");
 
         uint256 fee = 0;
 
-        if (isDEX(msg.sender)) {
-            // Bu bir satın alma işlemi
-            fee = (_amount * buyFee) / MAX_FEE_PERCENTAGE;
-        } else if (isDEX(_to)) {
-            // Bu bir satış işlemi
-            fee = (_amount * sellFee) / MAX_FEE_PERCENTAGE;
+        if (isDEX[_from]) {
+            fee = (_amount * buyFee) / 100;
+        } else if (isDEX[_to]) {
+            fee = (_amount * sellFee) / 100;
         }
 
         uint256 amountAfterFee = _amount - fee;
 
-        balanceOf[msg.sender] -= _amount;
+        balanceOf[_from] -= _amount;
         balanceOf[_to] += amountAfterFee;
 
         if (fee > 0) {
             balanceOf[feeRecipient] += fee;
-            emit Transfer(msg.sender, feeRecipient, fee);
+            emit Transfer(_from, feeRecipient, fee);
         }
 
-        emit Transfer(msg.sender, _to, amountAfterFee);
-        return true;
+        emit Transfer(_from, _to, amountAfterFee);
     }
 
     function updateDEXStatus(address _dexAddress, bool _status) external onlyOwner {
         isDEX[_dexAddress] = _status;
     }
-
-    function updateBlacklist(address account, bool status)
-        external
-        onlyOwner
-        timelockPassed(this.updateBlacklist.selector)
-    {
-        isBlacklisted[account] = status;
+function updateBlacklist(address account, bool status) external onlyOwner {
+        if (status) {
+            isBlacklisted[account] = true;
+        } else {
+            unblacklistTimelock[account] = block.timestamp + 1 days;
+        }
         emit BlacklistUpdated(account, status);
     }
 
-function setFees(uint256 _buyFee, uint256 _sellFee)
+    function finalizeUnblacklist(address account)
         external
         onlyOwner
-        timelockPassed(this.setFees.selector)
+        timelockPassedForUnblacklist(account)
+    {
+        isBlacklisted[account] = false;
+        emit BlacklistUpdated(account, false);
+    }
+
+    function setFees(uint256 _buyFee, uint256 _sellFee)
+        external
+        onlyOwner
     {
         require(_buyFee > 0 && _sellFee > 0, "Fees must be greater than zero");
         require(_buyFee <= MAX_FEE_PERCENTAGE, "Buy fee exceeds max limit");
