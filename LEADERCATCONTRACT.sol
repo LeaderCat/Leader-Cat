@@ -130,8 +130,13 @@ contract LEADERCATCONTRACT {
 function updateBlacklist(address account, bool status) external onlyOwner {
         if (status) {
             isBlacklisted[account] = true;
-        } else {
             unblacklistTimelock[account] = block.timestamp + 1 days;
+        } else {
+            require(
+                block.timestamp >= unblacklistTimelock[account],
+                "Timelock for unblacklist not yet passed"
+            );
+            isBlacklisted[account] = false;
         }
         emit BlacklistUpdated(account, status);
     }
