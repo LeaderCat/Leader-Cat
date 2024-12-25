@@ -4,7 +4,7 @@ pragma solidity 0.8.0;
 contract LEADERCATCONTRACT {
     string public constant name = "TOKEN NAME";
     string public constant symbol = "TOKEN";
-    uint256 public constant totalSupply = 1_000_000_000_000_000_000_000_000;
+    uint256 public constant totalSupply = 1_000_000_000_000 * 10 ** 18;
     uint8 public constant decimals = 18;
     uint256 public constant MAX_FEE_PERCENTAGE = 50;
 
