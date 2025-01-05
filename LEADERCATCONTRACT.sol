@@ -4,7 +4,7 @@ pragma solidity 0.8.0;
 contract LEADERCATCONTRACT {
     string public constant name = "TOKEN NAME";
     string public constant symbol = "TOKEN";
-    uint256 public constant totalSupply = 100_000_000_000_000 * 10 ** 18;
+    uint256 public constant totalSupply = 100_000_000_000 * 10 ** 18;
     uint8 public constant decimals = 18;
     uint256 public constant MAX_FEE_PERCENTAGE = 50;
 
@@ -21,6 +21,7 @@ contract LEADERCATCONTRACT {
 
     mapping(address => uint256) public unblacklistTimelock;
     mapping(address => mapping(address => uint256)) public allowance;
+    mapping(address => uint256) public lockedBalances;
 
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -34,7 +35,10 @@ contract LEADERCATCONTRACT {
         require(_feeRecipient != address(0), "Invalid fee recipient address");
         owner = msg.sender;
         feeRecipient = _feeRecipient;
-        balanceOf[msg.sender] = totalSupply;
+
+        // Tüm token'ları kilitle
+        balanceOf[address(this)] = totalSupply;  // Kontratta kilitli tutma
+        emit Transfer(address(0), address(this), totalSupply);  // Transfer eventini tetikle
     }
 
     modifier onlyOwner() {
@@ -60,6 +64,7 @@ contract LEADERCATCONTRACT {
         _;
     }
 
+    // Transfer fonksiyonu kilitli token'lar için geçersiz olacak
     function transfer(address _to, uint256 _amount)
         external
         notBlacklisted(msg.sender)
@@ -67,7 +72,8 @@ contract LEADERCATCONTRACT {
         validAddress(_to)
         returns (bool success)
     {
-        _transfer(msg.sender, _to, _amount);
+        require(balanceOf[address(this)] >= _amount, "Insufficient locked balance");
+        _transfer(address(this), _to, _amount);  // Tüm token'lar kontrat içindedir, yalnızca kontratın sahibine transfer edilebilir
         return true;
     }
 
@@ -112,9 +118,14 @@ contract LEADERCATCONTRACT {
         }
 
         uint256 amountAfterFee = _amount - fee;
+balanceOf[_from] -= _amount;
 
-        balanceOf[_from] -= _amount;
-        balanceOf[_to] += amountAfterFee;
+        if (_to == address(this)) {
+            // Token'ları kontratta tut
+            lockedBalances[address(this)] += amountAfterFee;
+        } else {
+            balanceOf[_to] += amountAfterFee;
+        }
 
         if (fee > 0) {
             balanceOf[feeRecipient] += fee;
@@ -124,10 +135,23 @@ contract LEADERCATCONTRACT {
         emit Transfer(_from, _to, amountAfterFee);
     }
 
+    // Kontrat sahibinin kilitli token'ları çekebilmesi için
+    function withdrawLockedTokens(uint256 amount) external onlyOwner {
+        require(lockedBalances[address(this)] >= amount, "Insufficient locked balance");
+        lockedBalances[address(this)] -= amount;
+        balanceOf[owner] += amount;
+        emit Transfer(address(this), owner, amount);
+    }
+
+    function getLockedBalance() external view returns (uint256) {
+        return lockedBalances[address(this)];
+    }
+
     function updateDEXStatus(address _dexAddress, bool _status) external onlyOwner {
         isDEX[_dexAddress] = _status;
     }
-function updateBlacklist(address account, bool status) external onlyOwner {
+
+    function updateBlacklist(address account, bool status) external onlyOwner {
         if (status) {
             isBlacklisted[account] = true;
             unblacklistTimelock[account] = block.timestamp + 1 days;
