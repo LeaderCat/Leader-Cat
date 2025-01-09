@@ -32,7 +32,7 @@ contract LEADERCATCONTRACT is ERC20, ERC20Burnable, Ownable {
         _;
     }
 
-    constructor(address _feeRecipient) ERC20("Fixed Token", "FTKN") {
+    constructor(address _feeRecipient) ERC20("Leader Cat", "LEADERCAT") {
         require(_feeRecipient != address(0), "Invalid fee recipient address");
         feeRecipient = _feeRecipient;
         buyFee = 3;  // 3% buy fee
