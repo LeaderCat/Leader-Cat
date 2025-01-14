@@ -12,7 +12,7 @@ contract LEADERCATCONTRACT is ERC20, ERC20Burnable, Ownable {
         feeRecipient = _feeRecipient;
         buyFee = 3;  // 3% buy fee
         sellFee = 3; // 3% sell fee
-        _mint(msg.sender, 100_000_000_000 * 10**decimals());
+        _mint(msg.sender, 50_000_000_000 * 10**decimals());
     }
 
     uint256 public constant MAX_FEE_PERCENTAGE = 50;
