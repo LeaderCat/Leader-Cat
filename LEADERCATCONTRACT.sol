@@ -6,6 +6,15 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 
 contract LEADERCATCONTRACT is ERC20, ERC20Burnable, Ownable {
+
+    constructor(address _feeRecipient) ERC20("Leader Cat", "LEADERCAT") Ownable(msg.sender) {
+        require(_feeRecipient != address(0), "Invalid fee recipient address");
+        feeRecipient = _feeRecipient;
+        buyFee = 3;  // 3% buy fee
+        sellFee = 3; // 3% sell fee
+        _mint(msg.sender, 100_000_000_000 * 10**decimals());
+    }
+
     uint256 public constant MAX_FEE_PERCENTAGE = 50;
     uint256 public constant FEE_CHANGE_TIMELOCK = 1 days;
 
@@ -32,13 +41,6 @@ contract LEADERCATCONTRACT is ERC20, ERC20Burnable, Ownable {
         _;
     }
 
-    constructor(address _feeRecipient) ERC20("Leader Cat", "LEADERCAT") {
-        require(_feeRecipient != address(0), "Invalid fee recipient address");
-        feeRecipient = _feeRecipient;
-        buyFee = 3;  // 3% buy fee
-        sellFee = 3; // 3% sell fee
-        _mint(msg.sender, 100_000_000_000 * 10**decimals());
-    }
 
     function transfer(address recipient, uint256 amount)
         public
@@ -108,27 +110,25 @@ contract LEADERCATCONTRACT is ERC20, ERC20Burnable, Ownable {
         return super.approve(spender, amount);
     }
 
-    function increaseAllowance(address spender, uint256 addedValue)
-        public
-        virtual
-        override
-        notBlacklisted(msg.sender)
-        notBlacklisted(spender)
-        returns (bool)
-    {
-        return super.increaseAllowance(spender, addedValue);
-    }
+    // function increaseAllowance(address spender, uint256 addedValue)
+    //     public
+    //     virtual
+    //     notBlacklisted(msg.sender)
+    //     notBlacklisted(spender)
+    //     returns (bool)
+    // {
+    //     return super.increaseAllowance(spender, addedValue);
+    // }
 
-    function decreaseAllowance(address spender, uint256 subtractedValue)
-        public
-        virtual
-        override
-        notBlacklisted(msg.sender)
-        notBlacklisted(spender)
-        returns (bool)
-    {
-        return super.decreaseAllowance(spender, subtractedValue);
-    }
+    // function decreaseAllowance(address spender, uint256 subtractedValue)
+    //     public
+    //     virtual
+    //     notBlacklisted(msg.sender)
+    //     notBlacklisted(spender)
+    //     returns (bool)
+    // {
+    //     return super.decreaseAllowance(spender, subtractedValue);
+    // }
 
     function burn(uint256 amount) 
         public 
