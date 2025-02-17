@@ -1,6 +1,4 @@
-/**
- *Submitted for verification at BscScan.com on 2025-01-16
-*/
+// SPDX-License-Identifier: MIT
 
 // File: @openzeppelin/contracts/utils/Context.sol
 
@@ -779,7 +777,7 @@ contract LEADERCATCONTRACT is ERC20, ERC20Burnable, Ownable {
         feeRecipient = _feeRecipient;
         buyFee = 3;  // 3% buy fee
         sellFee = 3; // 3% sell fee
-        _mint(msg.sender, 10_000_000_000 * 10**decimals());
+        _mint(msg.sender, 1_000_000_000 * 10**decimals());
     }
 
     uint256 public constant MAX_FEE_PERCENTAGE = 50;
