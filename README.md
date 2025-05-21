@@ -23,4 +23,3 @@ The primary license for the Leader Cat is the MIT License (`MIT`), see [`LICENSE
 
 
 ![image alt](https://github.com/user-attachments/assets/0347b0f7-c2a7-406a-953d-50edd206b94d)
-/)
