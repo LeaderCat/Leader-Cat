@@ -1,6 +1,6 @@
 # Leader Cat
 
-Leader Cat is a meme token on the Bsc network. His goal is to become the leader of all Meme tokens.
+Leader Cat is a P2E game on the BSC network.
 
 ## Table of Contents
 
@@ -9,6 +9,7 @@ Leader Cat is a meme token on the Bsc network. His goal is to become the leader 
 
 ## Additional Resources
 - [Website](https://leadercatbsc.com/)
+- [Linkedln](https://www.linkedin.com/company/leader-cat/)
 - [Twitter](https://x.com/LeaderCatCoin)
 - [Telegram](https://t.me/LeaderCat)
 
@@ -21,4 +22,5 @@ The primary license for the Leader Cat is the MIT License (`MIT`), see [`LICENSE
 
 
 
-![image alt](https://github.com/LeaderCat/Leader-Cat/blob/af26cdd61ad83db6e651e0574936788d48dbb8db/photo_5976604291722494954_x.jpg)
+![image alt]((https://github.com/user-attachments/assets/0347b0f7-c2a7-406a-953d-50edd206b94d)
+/)
